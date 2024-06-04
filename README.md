@@ -1,4 +1,4 @@
-# foundry-scaffold
+# KSX
 
 [![Github Actions][gha-badge]][gha] 
 [![Foundry][foundry-badge]][foundry] 
@@ -11,26 +11,12 @@
 [license]: https://opensource.org/license/GPL-3.0/
 [license-badge]: https://img.shields.io/badge/GitHub-GPL--3.0-informational
 
-Template foundry project created by Kwenta
-
-## Getting Started
-
-1. Create an `.env` file using the `.env.example` file as a template
-2. Update `package.json` with your project name, description, etc.
-3. Update the `README.md` with your project name, description, etc.
-4. Add required **Repository Secrets** to your github repository settings
-> Navigate to `Settings > Secrets and variables > Actions` and add whatever secrets are required for your project's CI.
-5. The current template CI will fail until the following repository secrets are added: `OPTIMISM_GOERLI_RPC_URL` and `ETHERSCAN_API_KEY`. See `.github/workflows/*` for more details.
-6. Finally, run `npm run coverage:generate-lcov` to generate a coverage report for your project and commit the results to your remote repository
-> This will be used by the CI to determine when changes to your project have caused the coverage to drop below a certain threshold.
 
 ## Contracts
 
-> `tree src/`
-
 ```
 src/
-└── Counter.sol
+└── KSXVault.sol
 ```
 
 ## Tests
