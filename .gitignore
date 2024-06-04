@@ -13,3 +13,6 @@ out/
 # Other
 .vscode
 .idea
+
+
+node_modules/
