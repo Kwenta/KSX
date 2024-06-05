@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.25;
 
+// TODO: adapt deploy script to deploy the KSXVault contract
+/*
 import {console2} from "lib/forge-std/src/console2.sol";
 import {
     Counter,
@@ -64,3 +66,4 @@ contract BootstrapOptimismGoerli is Setup, OptimismGoerliParameters {
 }
 
 // add other networks here as needed (ex: Base, BaseGoerli)
+*/
