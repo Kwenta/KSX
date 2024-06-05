@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.25;
 
-import {Bootstrap} from "test/utils/Bootstrap.sol";
+import {Test} from "forge-std/Test.sol";
+import { KSXVault } from "../src/KSXVault.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract KSXVaultTest is Bootstrap {
+contract KSXVaultTest is Test {
     function setUp() public {
-        /// @dev uncomment the following line to test in a forked environment
-        /// at a specific block number
-        // vm.rollFork(NETWORK_BLOCK_NUMBER);
 
-        initializeOptimismGoerli();
     }
+}
+
+contract MockERC20 is ERC20 {
+    constructor (string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }  
 }
