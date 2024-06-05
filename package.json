@@ -19,8 +19,5 @@
   },
   "bugs": {
     "url": "https://github.com/Kwenta/KSX/issues"
-  },
-  "dependencies": {
-    "@openzeppelin/contracts": "^5.0.2"
   }
 }
