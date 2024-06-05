@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.25;
 
+// TODO: adapt deploy script to deploy the KSXVault contract
+/*
 import {BaseGoerliParameters} from
     "script/utils/parameters/BaseGoerliParameters.sol";
 import {BaseParameters} from "script/utils/parameters/BaseParameters.sol";
@@ -12,7 +14,7 @@ import {Script} from "lib/forge-std/src/Script.sol";
 import {Counter} from "src/Counter.sol";
 
 /// @title Kwenta deployment script
-/// @author JaredBorders (jaredborders@pm.me)
+/// @author Flocqst (florian@kwenta.io)
 contract Setup is Script {
     function deploySystem() public returns (address) {
         Counter counter = new Counter();
@@ -76,3 +78,4 @@ contract DeployOptimismGoerli is Setup, OptimismGoerliParameters {
         vm.stopBroadcast();
     }
 }
+*/
