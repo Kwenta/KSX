@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.25;
 
+import {IKSXVault} from "src/interfaces/IKSXVault.sol";
 import {ERC4626} from
     "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -10,7 +11,7 @@ import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 /// @title KSXVault Contract
 /// @notice KSX ERC4626 Vault
 /// @author Flocqst (florian@kwenta.io)
-contract KSXVault is ERC4626, UUPSUpgradeable {
+contract KSXVault is IKSXVault, ERC4626, UUPSUpgradeable {
     /*//////////////////////////////////////////////////////////////
                                IMMUTABLES
     //////////////////////////////////////////////////////////////*/
@@ -26,7 +27,7 @@ contract KSXVault is ERC4626, UUPSUpgradeable {
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-    
+
     /// @notice Constructs the KSXVault contract
     /// @param _token Kwenta token address
     /// @param _pDAO Kwenta owned/operated multisig address
@@ -45,9 +46,12 @@ contract KSXVault is ERC4626, UUPSUpgradeable {
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc UUPSUpgradeable
-    function _authorizeUpgrade(address newImplementation)
+    function _authorizeUpgrade(address /* _newImplementation */ )
         internal
-        virtual
+        view
         override
-    {}
+    {
+        if (pDAO == address(0)) revert NonUpgradeable();
+        if (msg.sender != pDAO) revert OnlyPDAO();
+    }
 }
