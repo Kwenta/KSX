@@ -7,7 +7,6 @@ import {MockVaultUpgrade} from "test/utils/mocks/MockVaultUpgrade.sol";
 
 contract UpgradeTest is Bootstrap {
     function setUp() public {
-        // vm.rollFork(BASE_BLOCK_NUMBER);
         initializeOptimism();
     }
 }
