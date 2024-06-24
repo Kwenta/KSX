@@ -57,7 +57,6 @@ contract MockUpgrade is UpgradeTest {
     }
 }
 
-/// @custom:write-future-engine-upgrade-tests-here
 contract UpgradeVault is UpgradeTest {}
 
 contract RemoveUpgradability is UpgradeTest {
