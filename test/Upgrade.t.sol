@@ -7,9 +7,12 @@ import {MockVaultUpgrade} from "test/utils/mocks/MockVaultUpgrade.sol";
 
 contract UpgradeTest is Bootstrap {
     function setUp() public {
+        /** @PR:REVIEW unless there is a specific reason, avoid using fork tests **/
         initializeOptimism();
     }
 }
+
+/** @PR:REVIEW not entirely sure why you split up UpgradeTest/MockUpgrade/UpgradeVault; if no specific reason combine. otherwise thats fine **/
 
 contract MockUpgrade is UpgradeTest {
     MockVaultUpgrade mockVaultUpgrade;
@@ -22,6 +25,9 @@ contract MockUpgrade is UpgradeTest {
     }
 
     function test_upgrade() public {
+
+        /** @PR:REVIEW might as well fuzz the messages; never know what might be caught **/
+
         string memory message = "hi";
 
         bool success;

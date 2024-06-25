@@ -4,6 +4,8 @@
 [![Foundry][foundry-badge]][foundry] 
 [![License: GPL-3.0][license-badge]][license]
 
+
+/** @PR:REVIEW update following urls **/
 [gha]: https://github.com/Kwenta/foundry-scaffold/actions
 [gha-badge]: https://github.com/Kwenta/foundry-scaffold/actions/workflows/test.yml/badge.svg
 [foundry]: https://getfoundry.sh/
