@@ -1,35 +1,30 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.25;
 
-import {Bootstrap, KSXVault} from "test/utils/Bootstrap.sol";
 import {IKSXVault} from "src/interfaces/IKSXVault.sol";
+import {Bootstrap, KSXVault} from "test/utils/Bootstrap.sol";
 import {MockVaultUpgrade} from "test/utils/mocks/MockVaultUpgrade.sol";
 
 contract UpgradeTest is Bootstrap {
+
+    address public _pDAO = 0xe826d43961a87fBE71C91d9B73F7ef9b16721C07;
+    address public _token = 0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85;
+
     function setUp() public {
-        /** @PR:REVIEW unless there is a specific reason, avoid using fork tests **/
-        initializeOptimism();
+        initializeLocal(_token, _pDAO);
     }
+
 }
 
-/** @PR:REVIEW not entirely sure why you split up UpgradeTest/MockUpgrade/UpgradeVault; if no specific reason combine. otherwise thats fine **/
-
 contract MockUpgrade is UpgradeTest {
+
     MockVaultUpgrade mockVaultUpgrade;
 
     function deployMockVault() internal {
-        mockVaultUpgrade = new MockVaultUpgrade(
-            address(TOKEN),
-            address(pDAO)
-        );
+        mockVaultUpgrade = new MockVaultUpgrade(address(TOKEN), address(pDAO));
     }
 
-    function test_upgrade() public {
-
-        /** @PR:REVIEW might as well fuzz the messages; never know what might be caught **/
-
-        string memory message = "hi";
-
+    function test_upgrade(string memory message) public {
         bool success;
         bytes memory response;
 
@@ -60,16 +55,12 @@ contract MockUpgrade is UpgradeTest {
 
         ksxVault.upgradeToAndCall(address(mockVaultUpgrade), "");
     }
-}
 
-contract UpgradeVault is UpgradeTest {}
-
-contract RemoveUpgradability is UpgradeTest {
     function test_removeUpgradability() public {
-
-        MockVaultUpgrade mockVaultUpgrade = new MockVaultUpgrade(
+        mockVaultUpgrade = new MockVaultUpgrade(
             address(TOKEN),
-            address(0) // set pDAO to zero address to effectively remove upgradability
+            address(0) // set pDAO to zero address to effectively remove
+                // upgradability
         );
 
         vm.prank(pDAO);
@@ -78,8 +69,11 @@ contract RemoveUpgradability is UpgradeTest {
 
         vm.prank(pDAO);
 
-        vm.expectRevert(abi.encodeWithSelector(IKSXVault.NonUpgradeable.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IKSXVault.NonUpgradeable.selector)
+        );
 
         ksxVault.upgradeToAndCall(address(mockVaultUpgrade), "");
     }
+
 }
