@@ -20,14 +20,15 @@ import {Script} from "lib/forge-std/src/Script.sol";
 /// @title Kwenta KSX deployment script
 /// @author Flocqst (florian@kwenta.io)
 contract Setup is Script {
+
     function deploySystem(
         address token,
         address pDAO
-    ) public returns (KSXVault ksxVault) {
-        ksxVault = new KSXVault({
-            _token: token,
-            _pDAO: pDAO
-        });
+    )
+        public
+        returns (KSXVault ksxVault)
+    {
+        ksxVault = new KSXVault({_token: token, _pDAO: pDAO});
 
         // deploy ERC1967 proxy and set implementation to ksxVault
         Proxy proxy = new Proxy(address(ksxVault), "");
@@ -35,38 +36,41 @@ contract Setup is Script {
         // "wrap" proxy in IKSXVault interface
         ksxVault = KSXVault(address(proxy));
     }
+
 }
 
 /// @dev steps to deploy and verify on Optimism:
 /// (1) load the variables in the .env file via `source .env`
-/// (2) run `forge script script/Deploy.s.sol:DeployOptimism --rpc-url $OPTIMISM_RPC_URL --etherscan-api-key $OPTIMISM_ETHERSCAN_API_KEY --broadcast --verify -vvvv`
+/// (2) run `forge script script/Deploy.s.sol:DeployOptimism --rpc-url
+/// $OPTIMISM_RPC_URL --etherscan-api-key $OPTIMISM_ETHERSCAN_API_KEY
+/// --broadcast --verify -vvvv`
 contract DeployOptimism is Setup, OptimismParameters {
+
     function run() public {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(privateKey);
 
-        Setup.deploySystem({
-            token: KWENTA,
-            pDAO: PDAO
-        });
+        Setup.deploySystem({token: KWENTA, pDAO: PDAO});
 
         vm.stopBroadcast();
     }
+
 }
 
 /// @dev steps to deploy and verify on Optimism Goerli:
 /// (1) load the variables in the .env file via `source .env`
-/// (2) run `forge script script/Deploy.s.sol:DeployOptimismGoerli --rpc-url $OPTIMISM_GOERLI_RPC_URL --etherscan-api-key $OPTIMISM_ETHERSCAN_API_KEY --broadcast --verify -vvvv`
+/// (2) run `forge script script/Deploy.s.sol:DeployOptimismGoerli --rpc-url
+/// $OPTIMISM_GOERLI_RPC_URL --etherscan-api-key $OPTIMISM_ETHERSCAN_API_KEY
+/// --broadcast --verify -vvvv`
 contract DeployOptimismGoerli is Setup, OptimismGoerliParameters {
+
     function run() public {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(privateKey);
 
-        Setup.deploySystem({
-            token: KWENTA,
-            pDAO: PDAO
-        });
+        Setup.deploySystem({token: KWENTA, pDAO: PDAO});
 
         vm.stopBroadcast();
     }
+
 }

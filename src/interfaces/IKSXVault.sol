@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 /// @title Kwenta KSXVault Interface
 /// @author Flocqst (florian@kwenta.io)
 interface IKSXVault {
+
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -20,4 +21,5 @@ interface IKSXVault {
     /// @dev the KSXVault is not upgradeable when
     /// the pDAO has been set to the zero address
     error NonUpgradeable();
+
 }
