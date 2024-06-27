@@ -1,34 +1,47 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.25;
 
+import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC4626} from
     "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
-import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {FixedPointMathLib} from "lib/solady/src/utils/FixedPointMathLib.sol";
 
-/// @title Kwenta Example Contract
+/// @title KSXVault Contract
 /// @notice KSX ERC4626 Vault
 /// @author Flocqst (florian@kwenta.io)
 contract KSXVault is ERC4626 {
 
-    /// @notice Decimal offset used for calculating the conversion rate between KWENTA and KSX.
-    /// @dev Set to 3 to ensure the initial fixed ratio of 1,000 KSX per KWENTA
-    uint256 public immutable decimalsOffset;
+    /*//////////////////////////////////////////////////////////////
+                               IMMUTABLES
+    //////////////////////////////////////////////////////////////*/
 
-    constructor(address _token, uint256 _decimalsOffset)
+    /// @notice Decimal offset used for calculating the conversion rate between
+    /// KWENTA and KSX.
+    /// @dev Set to 3 to ensure the initial fixed ratio of 1,000 KSX per KWENTA
+    /// further protect against inflation attacks
+    /// (https://docs.openzeppelin.com/contracts/4.x/erc4626#inflation-attack)
+    uint8 public immutable offset;
+
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Constructs the KSXVault contract
+    /// @param _token Kwenta token address
+    /// @param _offset offset in the decimal representation between the
+    /// underlying asset's decimals and the vault decimals
+    constructor(
+        address _token,
+        uint8 _offset
+    )
         ERC4626(IERC20(_token))
         ERC20("KSX Vault", "KSX")
     {
-        decimalsOffset = _decimalsOffset;
+        offset = _offset;
     }
 
-
-    function convertToShares(uint256 assets) public view virtual override returns (uint256 shares) {
-            uint256 o = decimalsOffset;
-            if (o == 0) {
-                return FixedPointMathLib.fullMulDiv(assets, totalSupply() + 1, totalAssets() + 1);
-            }
-            return FixedPointMathLib.fullMulDiv(assets, totalSupply() + 10 ** o, totalAssets() + 1);
+    function _decimalsOffset() internal view virtual override returns (uint8) {
+        return offset;
     }
 
 }
