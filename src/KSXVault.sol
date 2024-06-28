@@ -44,4 +44,27 @@ contract KSXVault is ERC4626 {
         return offset;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                        STAKING MANAGEMENT
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Claim KWENTA rewards
+    function _claimKWENTARewards() internal returns (uint256) {
+        // Implement the logic to claim KWENTA rewards
+    }
+
+    /// @notice Stake KWENTA tokens
+    function _stakeKWENTA(uint256 kwentaAmount) internal {
+        // Implement the logic to stake KWENTA tokens back into the vault
+    }
+
+    /// @notice Modifier to compound unstaked KWENTA tokens before executing the
+    /// function
+    modifier compoundUnstakedKWENTA() {
+        // StakingV2 harvest rewards
+        // TokenDistributor claim USDC
+        // Swap USDC for KWENTA and stake
+        _;
+    }
+
 }
