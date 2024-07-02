@@ -2,6 +2,7 @@
 pragma solidity 0.8.25;
 
 // proxy
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC1967Proxy as Proxy} from
     "lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -28,13 +29,16 @@ contract Setup is Script {
         public
         returns (KSXVault ksxVault)
     {
-        ksxVault = new KSXVault({_token: token, _pDAO: pDAO});
-
-        // deploy ERC1967 proxy and set implementation to ksxVault
-        Proxy proxy = new Proxy(address(ksxVault), "");
-
-        // "wrap" proxy in IKSXVault interface
-        ksxVault = KSXVault(address(proxy));
+        // Deploy KSX Vault Implementation
+        address ksxVaultImplementation = address(new KSXVault(pDAO));
+        ksxVault = KSXVault(
+            address(
+                new Proxy(
+                    ksxVaultImplementation,
+                    abi.encodeWithSignature("initialize(address)", token)
+                )
+            )
+        );
     }
 
 }
