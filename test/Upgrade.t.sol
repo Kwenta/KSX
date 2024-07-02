@@ -20,8 +20,8 @@ contract MockUpgrade is UpgradeTest {
 
     MockVaultUpgrade mockVaultUpgrade;
 
-    function deployMockVault() internal {
-        mockVaultUpgrade = new MockVaultUpgrade(address(TOKEN), address(pDAO));
+    function deployMockVaultImplementation() internal {
+        mockVaultUpgrade = new MockVaultUpgrade(address(pDAO));
     }
 
     function test_upgrade(string memory message) public {
@@ -33,7 +33,7 @@ contract MockUpgrade is UpgradeTest {
         );
         assert(!success);
 
-        deployMockVault();
+        deployMockVaultImplementation();
 
         vm.prank(pDAO);
 
@@ -47,7 +47,7 @@ contract MockUpgrade is UpgradeTest {
     }
 
     function test_upgrade_only_pDAO() public {
-        deployMockVault();
+        deployMockVaultImplementation();
 
         vm.prank(BAD_ACTOR);
 
@@ -58,7 +58,6 @@ contract MockUpgrade is UpgradeTest {
 
     function test_removeUpgradability() public {
         mockVaultUpgrade = new MockVaultUpgrade(
-            address(TOKEN),
             address(0) // set pDAO to zero address to effectively remove
                 // upgradability
         );

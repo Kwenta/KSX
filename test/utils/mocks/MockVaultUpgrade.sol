@@ -7,7 +7,7 @@ import {KSXVault} from "src/KSXVault.sol";
 /// @author Flocqst (florian@kwenta.io)
 contract MockVaultUpgrade is KSXVault {
 
-    constructor(address _token, address _pDAO) KSXVault(_token, _pDAO) {}
+    constructor(address _pDAO) KSXVault(_pDAO) {}
 
     function echo(string memory message) public pure returns (string memory) {
         return message;
