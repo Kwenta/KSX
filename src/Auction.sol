@@ -5,7 +5,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-
 contract Auction is Ownable, Initializable {
     event Start();
     event Bid(address indexed sender, uint256 amount);
@@ -14,7 +13,9 @@ contract Auction is Ownable, Initializable {
     event BidBufferUpdated(uint256 newBidIncrement);
     event BiddingLocked();
     event BiddingUnlocked();
-    event FundsWithdrawn(address indexed owner, uint256 usdcAmount, uint256 kwentaAmount);
+    event FundsWithdrawn(
+        address indexed owner, uint256 usdcAmount, uint256 kwentaAmount
+    );
 
     error AuctionAlreadyStarted();
     error AuctionNotStarted();
@@ -40,7 +41,13 @@ contract Auction is Ownable, Initializable {
     uint256 public highestBid;
     mapping(address => uint256) public bids;
 
-    constructor(address initialOwner, address _usdc, address _kwenta, uint256 _startingBid, uint256 _bidBuffer) Ownable(initialOwner) {
+    constructor(
+        address initialOwner,
+        address _usdc,
+        address _kwenta,
+        uint256 _startingBid,
+        uint256 _bidBuffer
+    ) Ownable(initialOwner) {
         usdc = IERC20(_usdc);
         kwenta = IERC20(_kwenta);
 
@@ -49,10 +56,10 @@ contract Auction is Ownable, Initializable {
     }
 
     function initialize(
-        address initialOwner, 
-        address _usdc, 
-        address _kwenta, 
-        uint256 _startingBid, 
+        address initialOwner,
+        address _usdc,
+        address _kwenta,
+        uint256 _startingBid,
         uint256 _bidBuffer
     ) public initializer {
         _transferOwnership(initialOwner);
@@ -64,7 +71,7 @@ contract Auction is Ownable, Initializable {
         bidBuffer = _bidBuffer;
     }
 
-    function start(uint256 _auctionAmount) external onlyOwner{
+    function start(uint256 _auctionAmount) external onlyOwner {
         if (started) revert AuctionAlreadyStarted();
 
         usdc.transferFrom(msg.sender, address(this), _auctionAmount);
@@ -79,7 +86,9 @@ contract Auction is Ownable, Initializable {
     function bid(uint256 amount) external Lock {
         if (!started) revert AuctionNotStarted();
         if (block.timestamp >= endAt) revert AuctionAlreadyEnded();
-        if (amount <= highestBid + bidBuffer) revert BidTooLow(highestBid + bidBuffer);
+        if (amount <= highestBid + bidBuffer) {
+            revert BidTooLow(highestBid + bidBuffer);
+        }
 
         kwenta.transferFrom(msg.sender, address(this), amount);
 
