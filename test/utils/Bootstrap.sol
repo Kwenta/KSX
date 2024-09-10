@@ -11,6 +11,7 @@ import {
 } from "script/Deploy.s.sol";
 import {KSXVault} from "src/KSXVault.sol";
 import {Constants} from "test/utils/Constants.sol";
+import {IStakingRewardsV2} from "@token/interfaces/IStakingRewardsV2.sol";
 
 contract Bootstrap is Test, Constants {
 
@@ -24,16 +25,19 @@ contract Bootstrap is Test, Constants {
 
     IERC20 public TOKEN;
 
+    IStakingRewardsV2 public STAKING_REWARDS;
+
     // testing addresses
     address constant alice = address(0xAAAA);
     address constant bob = address(0xBBBB);
 
-    function initializeLocal(address _token, uint8 _decimalsOffset) internal {
+    function initializeLocal(address _token, address _stakingRewards, uint8 _decimalsOffset) internal {
         BootstrapLocal bootstrap = new BootstrapLocal();
-        (address ksxVaultAddress) = bootstrap.init(_token, _decimalsOffset);
+        (address ksxVaultAddress) = bootstrap.init(_token, _stakingRewards, _decimalsOffset);
 
         decimalsOffset = _decimalsOffset;
         TOKEN = IERC20(_token);
+        STAKING_REWARDS= IStakingRewardsV2(_stakingRewards);
         ksxVault = KSXVault(ksxVaultAddress);
     }
 
@@ -43,12 +47,13 @@ contract BootstrapLocal is Setup {
 
     function init(
         address _token,
+        address _stakingRewards,
         uint8 _decimalsOffset
     )
         public
         returns (address)
     {
-        (KSXVault ksxvault) = Setup.deploySystem(_token, _decimalsOffset);
+        (KSXVault ksxvault) = Setup.deploySystem(_token, _stakingRewards, _decimalsOffset);
 
         return (address(ksxvault));
     }

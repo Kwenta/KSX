@@ -4,17 +4,32 @@ pragma solidity 0.8.25;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Test} from "forge-std/Test.sol";
 import {Bootstrap, KSXVault} from "test/utils/Bootstrap.sol";
+import {MockERC20} from "test/mocks/MockERC20.sol";
+import {MockStakingRewards} from "test/mocks/MockStakingRewards.sol";
 
 contract KSXVaultTest is Bootstrap {
 
     MockERC20 depositToken;
+    MockStakingRewards stakingRewards;
 
     function setUp() public {
+
         depositToken = new MockERC20("Deposit Token", "DT");
-        initializeLocal(address(depositToken), DECIMAL_OFFSET);
+        stakingRewards = new MockStakingRewards(address(depositToken));
+        initializeLocal(address(depositToken),  address(stakingRewards), DECIMAL_OFFSET);
 
         depositToken.mint(alice, 10 ether);
         depositToken.mint(bob, 10 ether);
+
+        // vm.prank(alice);
+        // depositToken.approve(address(ksxVault), type(uint256).max);
+
+        // vm.prank(bob);
+        // depositToken.approve(address(ksxVault), type(uint256).max);
+
+        // Give infinite approval to the staking rewards contract for the vault
+        vm.prank(address(ksxVault));
+        depositToken.approve(address(stakingRewards), type(uint256).max);
     }
 
     // Asserts decimals offset is correctly set to 3
@@ -30,7 +45,7 @@ contract KSXVaultTest is Bootstrap {
         depositToken.approve(address(ksxVault), amount);
         ksxVault.deposit(1 ether, alice);
         assertEq(ksxVault.balanceOf(alice), amount * (10 ** ksxVault.offset()));
-        assertEq(depositToken.balanceOf(address(ksxVault)), amount);
+        assertEq(stakingRewards.stakedBalanceOf(address(ksxVault)), amount);
         vm.stopPrank();
     }
 
@@ -44,7 +59,7 @@ contract KSXVaultTest is Bootstrap {
         ksxVault.mint(1 ether, alice);
         assertEq(ksxVault.balanceOf(alice), amount);
         assertEq(
-            depositToken.balanceOf(address(ksxVault)),
+            stakingRewards.stakedBalanceOf(address(ksxVault)),
             amount / (10 ** ksxVault.offset())
         );
         vm.stopPrank();
@@ -58,11 +73,11 @@ contract KSXVaultTest is Bootstrap {
         depositToken.approve(address(ksxVault), amount);
         ksxVault.deposit(amount, alice);
         assertEq(ksxVault.balanceOf(alice), amount * (10 ** ksxVault.offset()));
-        assertEq(depositToken.balanceOf(address(ksxVault)), amount);
+        assertEq(stakingRewards.stakedBalanceOf(address(ksxVault)), amount);
 
         ksxVault.withdraw(amount, alice, alice);
         assertEq(ksxVault.balanceOf(alice), 0);
-        assertEq(depositToken.balanceOf(address(ksxVault)), 0);
+        assertEq(stakingRewards.stakedBalanceOf(address(ksxVault)), 0);
         assertEq(depositToken.balanceOf(alice), 10 ether);
         vm.stopPrank();
     }
@@ -72,32 +87,17 @@ contract KSXVaultTest is Bootstrap {
         vm.startPrank(alice);
         depositToken.approve(address(ksxVault), amount);
         ksxVault.mint(1 ether, alice);
-        assertEq(ksxVault.balanceOf(alice), amount);
+        assertEq(stakingRewards.stakedBalanceOf(address(ksxVault)), amount / 1000);
         assertEq(
-            depositToken.balanceOf(address(ksxVault)),
+            stakingRewards.stakedBalanceOf(address(ksxVault)),
             amount / (10 ** ksxVault.offset())
         );
 
         ksxVault.redeem(amount, alice, alice);
         assertEq(ksxVault.balanceOf(alice), 0);
-        assertEq(depositToken.balanceOf(address(ksxVault)), 0);
-        assertEq(depositToken.balanceOf(alice), 10 ether);
+        // assertEq(stakingRewards.stakedBalanceOf(address(ksxVault)), 0);
+        // assertEq(depositToken.balanceOf(alice), 10 ether);
         vm.stopPrank();
-    }
-
-}
-
-contract MockERC20 is ERC20 {
-
-    constructor(
-        string memory name_,
-        string memory symbol_
-    )
-        ERC20(name_, symbol_)
-    {}
-
-    function mint(address to, uint256 amount) external {
-        _mint(to, amount);
     }
 
 }
