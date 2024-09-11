@@ -32,14 +32,14 @@ contract AuctionFactory {
     }
 
     /// @notice Creates a new auction by cloning the auction implementation contract
-    /// @param _pDAO The address of the DAO that owns the auction
+    /// @param _owner The address of the DAO that owns the auction
     /// @param _usdc The address for the USDC ERC20 token
     /// @param _kwenta The address for the KWENTA ERC20 token
     /// @param _startingBid The starting bid amount
     /// @param _bidBuffer The initial bid buffer amount
     /// @dev The newly created auction contract is initialized and added to the auctions array
     function createAuction(
-        address _pDAO,
+        address _owner,
         address _usdc,
         address _kwenta,
         uint256 _startingBid,
@@ -47,10 +47,10 @@ contract AuctionFactory {
     ) external {
         address clone = Clones.clone(auctionImplementation);
         Auction(clone).initialize(
-            _pDAO, _usdc, _kwenta, _startingBid, _bidBuffer
+            _owner, _usdc, _kwenta, _startingBid, _bidBuffer
         );
         Auction newAuction =
-            new Auction(_pDAO, _usdc, _kwenta, _startingBid, _bidBuffer);
+            new Auction(_owner, _usdc, _kwenta, _startingBid, _bidBuffer);
         auctions.push(address(newAuction));
 
         emit AuctionCreated(
