@@ -34,11 +34,11 @@ contract Auction is Ownable, Initializable {
     /// @param newBidIncrement The new bid increment value
     event BidBufferUpdated(uint256 newBidIncrement);
 
-    /// @notice Emitted when bidding is locked
-    event BiddingLocked();
+    /// @notice Emitted when bidding is frozen
+    event BiddingFrozen();
 
-    /// @notice Emitted when bidding is unlocked
-    event BiddingUnlocked();
+    /// @notice Emitted when bidding is resumed
+    event BiddingResumed();
 
     /// @notice Emitted when funds are withdrawn by the owner
     /// @param owner The address of the owner
@@ -71,8 +71,8 @@ contract Auction is Ownable, Initializable {
     /// @notice Thrown when trying to settle an auction that has already been settled
     error AuctionAlreadySettled();
 
-    /// @notice Thrown when trying to lock bidding when it is already locked
-    error BiddingLockedErr();
+    /// @notice Thrown when trying to froze bidding when it is already frozen
+    error BiddingFrozenErr();
 
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
@@ -102,8 +102,8 @@ contract Auction is Ownable, Initializable {
     /// @notice Indicates if the auction has been settled.
     bool public settled;
 
-    /// @notice Indicates if bidding is locked
-    bool public locked;
+    /// @notice Indicates if bidding is frozen
+    bool public frozen;
 
     /// @notice The address of the highest bidder
     address public highestBidder;
@@ -182,7 +182,7 @@ contract Auction is Ownable, Initializable {
     /// @notice Places a bid in the auction.
     /// @param amount The amount of KWENTA to bid.
     /// @dev The auction must be started, not ended, and the bid must be higher than the current highest bid plus buffer
-    function bid(uint256 amount) external lock {
+    function bid(uint256 amount) external isFrozen {
         if (!started) revert AuctionNotStarted();
         if (block.timestamp >= endAt) revert AuctionAlreadyEnded();
         if (amount < highestBid + bidBuffer) {
@@ -241,22 +241,22 @@ contract Auction is Ownable, Initializable {
         emit BidBufferUpdated(_bidBuffer);
     }
 
-    /// @notice Modifier to ensure that bidding is not locked
-    modifier lock() {
-        if (locked) revert BiddingLockedErr();
+    /// @notice Modifier to ensure that bidding is not frozen
+    modifier isFrozen() {
+        if (frozen) revert BiddingFrozenErr();
         _;
     }
 
-    /// @notice Locks bidding, preventing any new bids
-    function lockBidding() external onlyOwner {
-        locked = true;
-        emit BiddingLocked();
+    /// @notice Freeze bidding, preventing any new bids
+    function freezeBidding() external onlyOwner {
+        frozen = true;
+        emit BiddingFrozen();
     }
 
-    /// @notice Unlocks bidding, allowing new bids to be placed
-    function unlockBidding() external onlyOwner {
-        locked = false;
-        emit BiddingUnlocked();
+    /// @notice Resume bidding, allowing new bids to be placed
+    function resumeBidding() external onlyOwner {
+        frozen = false;
+        emit BiddingResumed();
     }
 
     /// @notice Withdraws all funds from the contract
