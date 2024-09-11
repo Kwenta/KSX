@@ -197,43 +197,43 @@ contract AuctionTest is Test, Constants, ConsolidatedEvents {
         vm.stopPrank();
     }
 
-    function test_cannot_place_bid_bidding_locked() public {
+    function test_cannot_place_bid_bidding_frozen() public {
         startAuction(AUCTION_TEST_VALUE);
 
         // Lock bidding
         vm.prank(OWNER);
-        auction.lockBidding();
+        auction.freezeBidding();
 
         // Try placing a bid
         vm.startPrank(ACTOR1);
         kwenta.approve(address(auction), TEST_VALUE);
 
-        vm.expectRevert(Auction.BiddingLockedErr.selector);
+        vm.expectRevert(Auction.BiddingFrozenErr.selector);
         auction.bid(TEST_VALUE);
         vm.stopPrank();
 
         vm.prank(OWNER);
-        auction.unlockBidding();
+        auction.resumeBidding();
 
         placeBid(ACTOR1, TEST_VALUE);
     }
 
-    function test_lock_bidding_event() public {
+    function test_freeze_bidding_event() public {
         startAuction(AUCTION_TEST_VALUE);
 
         vm.prank(OWNER);
         vm.expectEmit(true, true, true, true);
-        emit BiddingLocked();
-        auction.lockBidding();
+        emit BiddingFrozen();
+        auction.freezeBidding();
     }
 
-    function test_unlock_bidding_event() public {
+    function test_resume_bidding_event() public {
         startAuction(AUCTION_TEST_VALUE);
 
         vm.prank(OWNER);
         vm.expectEmit(true, true, true, true);
-        emit BiddingUnlocked();
-        auction.unlockBidding();
+        emit BiddingResumed();
+        auction.resumeBidding();
     }
 
     /*//////////////////////////////////////////////////////////////

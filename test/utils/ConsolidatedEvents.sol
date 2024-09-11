@@ -18,9 +18,9 @@ contract ConsolidatedEvents {
 
     event BidBufferUpdated(uint256 newBidIncrement);
 
-    event BiddingLocked();
+    event BiddingFrozen();
 
-    event BiddingUnlocked();
+    event BiddingResumed();
 
     event FundsWithdrawn(
         address indexed owner, uint256 usdcAmount, uint256 kwentaAmount
