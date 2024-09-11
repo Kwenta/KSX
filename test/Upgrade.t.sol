@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.25;
 
+import {Initializable} from
+    "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IKSXVault} from "src/interfaces/IKSXVault.sol";
 import {Bootstrap, KSXVault} from "test/utils/Bootstrap.sol";
 import {MockVaultUpgrade} from "test/utils/mocks/MockVaultUpgrade.sol";
@@ -73,6 +75,20 @@ contract MockUpgrade is UpgradeTest {
         );
 
         ksxVault.upgradeToAndCall(address(mockVaultUpgrade), "");
+    }
+
+    function test_initializerDisabledAfterDeployment() public {
+        // Vault is already initialized in the setUp()
+
+        // Try to initialize again
+        vm.expectRevert(
+            abi.encodeWithSelector(Initializable.InvalidInitialization.selector)
+        );
+
+        ksxVault.initialize(address(0x00));
+
+        // Verify that the token address did not change
+        assertEq(address(ksxVault.asset()), _token);
     }
 
 }
