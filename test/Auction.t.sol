@@ -385,7 +385,7 @@ contract AuctionTest is Test, Constants, ConsolidatedEvents {
         auction.settleAuction();
 
         // Try settling an auction that has already ended
-        vm.expectRevert(Auction.AuctionEnded.selector);
+        vm.expectRevert(Auction.AuctionAlreadySettled.selector);
         auction.settleAuction();
     }
 
