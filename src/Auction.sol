@@ -69,7 +69,7 @@ contract Auction is Ownable, Initializable {
     error AuctionNotEnded();
 
     /// @notice Thrown when trying to settle an auction that has already been settled
-    error AuctionEnded();
+    error AuctionAlreadySettled();
 
     /// @notice Thrown when trying to lock bidding when it is already locked
     error BiddingLockedErr();
@@ -99,8 +99,8 @@ contract Auction is Ownable, Initializable {
     /// @notice Indicates if the auction has started.
     bool public started;
 
-    /// @notice Indicates if the auction has ended.
-    bool public ended;
+    /// @notice Indicates if the auction has been settled.
+    bool public settled;
 
     /// @notice Indicates if bidding is locked
     bool public locked;
@@ -220,9 +220,9 @@ contract Auction is Ownable, Initializable {
     function settleAuction() external {
         if (!started) revert AuctionNotStarted();
         if (block.timestamp < endAt) revert AuctionNotEnded();
-        if (ended) revert AuctionEnded();
+        if (settled) revert AuctionAlreadySettled();
 
-        ended = true;
+        settled = true;
 
         if (highestBidder != address(0)) {
             usdc.transfer(highestBidder, auctionAmount);
