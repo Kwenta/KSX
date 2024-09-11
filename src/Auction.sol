@@ -182,7 +182,7 @@ contract Auction is Ownable, Initializable {
     /// @notice Places a bid in the auction.
     /// @param amount The amount of KWENTA to bid.
     /// @dev The auction must be started, not ended, and the bid must be higher than the current highest bid plus buffer
-    function bid(uint256 amount) external Lock {
+    function bid(uint256 amount) external lock {
         if (!started) revert AuctionNotStarted();
         if (block.timestamp >= endAt) revert AuctionAlreadyEnded();
         if (amount < highestBid + bidBuffer) {
@@ -242,7 +242,7 @@ contract Auction is Ownable, Initializable {
     }
 
     /// @notice Modifier to ensure that bidding is not locked
-    modifier Lock() {
+    modifier lock() {
         if (locked) revert BiddingLockedErr();
         _;
     }
