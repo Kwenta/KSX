@@ -4,8 +4,9 @@
 [![Foundry][foundry-badge]][foundry] 
 [![License: GPL-3.0][license-badge]][license]
 
-[gha]: https://github.com/Kwenta/foundry-scaffold/actions
-[gha-badge]: https://github.com/Kwenta/foundry-scaffold/actions/workflows/test.yml/badge.svg
+
+[gha]: https://github.com/Kwenta/KSX/actions
+[gha-badge]: https://github.com/Kwenta/KSX/actions/workflows/test.yml/badge.svg
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
 [license]: https://opensource.org/license/GPL-3.0/
