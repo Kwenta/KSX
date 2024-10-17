@@ -106,6 +106,7 @@ contract KSXVault is ERC4626 {
         // });
     }
 
+    /// @notice Checks if the auction is ready to start
     function auctionReady() public view returns (bool) {
         if (_startOfWeek(block.timestamp) > lastAuctionStartTime) {
             return true;
