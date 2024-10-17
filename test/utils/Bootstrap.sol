@@ -31,9 +31,9 @@ contract Bootstrap is Test, Constants {
     address constant alice = address(0xAAAA);
     address constant bob = address(0xBBBB);
 
-    function initializeLocal(address _token, address _stakingRewards, uint8 _decimalsOffset) internal {
+    function initializeLocal(address _token, address _stakingRewards, uint8 _decimalsOffset, uint256 _daysToOffsetBy) internal {
         BootstrapLocal bootstrap = new BootstrapLocal();
-        (address ksxVaultAddress) = bootstrap.init(_token, _stakingRewards, _decimalsOffset);
+        (address ksxVaultAddress) = bootstrap.init(_token, _stakingRewards, _decimalsOffset, _daysToOffsetBy);
 
         decimalsOffset = _decimalsOffset;
         TOKEN = IERC20(_token);
@@ -48,12 +48,13 @@ contract BootstrapLocal is Setup {
     function init(
         address _token,
         address _stakingRewards,
-        uint8 _decimalsOffset
+        uint8 _decimalsOffset,
+        uint256 _timeOffset
     )
         public
         returns (address)
     {
-        (KSXVault ksxvault) = Setup.deploySystem(_token, _stakingRewards, _decimalsOffset);
+        (KSXVault ksxvault) = Setup.deploySystem(_token, _stakingRewards, _decimalsOffset, _timeOffset);
 
         return (address(ksxvault));
     }
