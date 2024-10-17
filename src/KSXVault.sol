@@ -23,7 +23,7 @@ contract KSXVault is ERC4626 {
     /// @dev Set to 3 to ensure the initial fixed ratio of 1,000 KSX per KWENTA
     /// further protect against inflation attacks
     /// (https://docs.openzeppelin.com/contracts/4.x/erc4626#inflation-attack)
-    uint8 public immutable offset;
+    uint8 public immutable decimalOffset;
 
     /// @notice Kwenta's StakingRewards contract
     IStakingRewardsV2 internal immutable STAKING_REWARDS;
@@ -38,6 +38,9 @@ contract KSXVault is ERC4626 {
 
     /// @notice Thrown when trying to start an auction when it is not ready
     error AuctionNotReady();
+
+    /// @notice error when offset is 7 or more days
+    error OffsetTooBig();
 
     /*///////////////////////////////////////////////////////////////
                                 STATE
@@ -56,19 +59,19 @@ contract KSXVault is ERC4626 {
     /// @notice Constructs the KSXVault contract
     /// @param _token Kwenta token address
     /// @param _stakingRewards Kwenta v2 staking rewards contract
-    /// @param _offset offset in the decimal representation between the
+    /// @param _decimalOffset offset in the decimal representation between the
     /// underlying asset's decimals and the vault decimals
     /// @param _daysToOffsetBy the number of days to offset the week by
     constructor(
         address _token,
         address _stakingRewards,
-        uint8 _offset,
+        uint8 _decimalOffset,
         uint256 _daysToOffsetBy
     )
         ERC4626(IERC20(_token))
         ERC20("KSX Vault", "KSX")
     {
-        offset = _offset;
+        decimalOffset = _decimalOffset;
         STAKING_REWARDS = IStakingRewardsV2(_stakingRewards);
         KWENTA = ERC20(_token);
 
@@ -82,7 +85,7 @@ contract KSXVault is ERC4626 {
     /// @dev This function is used internally by the ERC4626 implementation
     /// @return The decimal offset value
     function _decimalsOffset() internal view virtual override returns (uint8) {
-        return offset;
+        return decimalOffset;
     }
 
     /*//////////////////////////////////////////////////////////////

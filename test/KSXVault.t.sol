@@ -34,7 +34,7 @@ contract KSXVaultTest is Bootstrap {
 
     // Asserts decimals offset is correctly set to 3
     function test_vault_decimalsOffset() public {
-        assertEq(ksxVault.offset(), 3);
+        assertEq(ksxVault.decimalOffset(), 3);
     }
 
     // Asserts correct deposit at 1000 shares ratio
@@ -44,7 +44,7 @@ contract KSXVaultTest is Bootstrap {
         vm.startPrank(alice);
         depositToken.approve(address(ksxVault), amount);
         ksxVault.deposit(1 ether, alice);
-        assertEq(ksxVault.balanceOf(alice), amount * (10 ** ksxVault.offset()));
+        assertEq(ksxVault.balanceOf(alice), amount * (10 ** ksxVault.decimalOffset()));
         assertEq(stakingRewards.stakedBalanceOf(address(ksxVault)), amount);
         vm.stopPrank();
     }
@@ -60,7 +60,7 @@ contract KSXVaultTest is Bootstrap {
         assertEq(ksxVault.balanceOf(alice), amount);
         assertEq(
             stakingRewards.stakedBalanceOf(address(ksxVault)),
-            amount / (10 ** ksxVault.offset())
+            amount / (10 ** ksxVault.decimalOffset())
         );
         vm.stopPrank();
     }
@@ -72,7 +72,7 @@ contract KSXVaultTest is Bootstrap {
         vm.startPrank(alice);
         depositToken.approve(address(ksxVault), amount);
         ksxVault.deposit(amount, alice);
-        assertEq(ksxVault.balanceOf(alice), amount * (10 ** ksxVault.offset()));
+        assertEq(ksxVault.balanceOf(alice), amount * (10 ** ksxVault.decimalOffset()));
         assertEq(stakingRewards.stakedBalanceOf(address(ksxVault)), amount);
 
         ksxVault.withdraw(amount, alice, alice);
@@ -90,7 +90,7 @@ contract KSXVaultTest is Bootstrap {
         assertEq(stakingRewards.stakedBalanceOf(address(ksxVault)), amount / 1000);
         assertEq(
             stakingRewards.stakedBalanceOf(address(ksxVault)),
-            amount / (10 ** ksxVault.offset())
+            amount / (10 ** ksxVault.decimalOffset())
         );
 
         ksxVault.redeem(amount, alice, alice);
