@@ -11,9 +11,12 @@ import {IStakingRewardsV2} from "@token/interfaces/IStakingRewardsV2.sol";
 /// @author Flocqst (florian@kwenta.io)
 contract KSXVault is ERC4626 {
 
-    /*//////////////////////////////////////////////////////////////
-                               IMMUTABLES
-    //////////////////////////////////////////////////////////////*/
+    /*///////////////////////////////////////////////////////////////
+                        CONSTANTS/IMMUTABLES
+    ///////////////////////////////////////////////////////////////*/
+
+    /// @notice max amount of days the time can be offset by
+    uint internal constant MAX_OFFSET_DAYS = 6;
 
     /// @notice Decimal offset used for calculating the conversion rate between
     /// KWENTA and KSX.
@@ -30,6 +33,23 @@ contract KSXVault is ERC4626 {
     ERC20 private immutable KWENTA;
 
     /*//////////////////////////////////////////////////////////////
+                                ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Thrown when trying to start an auction when it is not ready
+    error AuctionNotReady();
+
+    /*///////////////////////////////////////////////////////////////
+                                STATE
+    ///////////////////////////////////////////////////////////////*/
+
+    /// @notice track last time the auction was started
+    uint256 public lastAuctionStartTime;
+
+    /// @notice the week offset in seconds
+    uint256 internal immutable timeOffset;
+
+    /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
@@ -38,10 +58,12 @@ contract KSXVault is ERC4626 {
     /// @param _stakingRewards Kwenta v2 staking rewards contract
     /// @param _offset offset in the decimal representation between the
     /// underlying asset's decimals and the vault decimals
+    /// @param _daysToOffsetBy the number of days to offset the week by
     constructor(
         address _token,
         address _stakingRewards,
-        uint8 _offset
+        uint8 _offset,
+        uint256 _daysToOffsetBy
     )
         ERC4626(IERC20(_token))
         ERC20("KSX Vault", "KSX")
@@ -49,6 +71,11 @@ contract KSXVault is ERC4626 {
         offset = _offset;
         STAKING_REWARDS = IStakingRewardsV2(_stakingRewards);
         KWENTA = ERC20(_token);
+
+        if (_daysToOffsetBy > MAX_OFFSET_DAYS) {
+            revert OffsetTooBig();
+        }
+        timeOffset = _daysToOffsetBy * 1 days;
     }
 
     /// @notice Returns the decimal offset for the vault
@@ -56,6 +83,47 @@ contract KSXVault is ERC4626 {
     /// @return The decimal offset value
     function _decimalsOffset() internal view virtual override returns (uint8) {
         return offset;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        START AUCTION FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Starts the weekly auction with the USDC balance of the vault
+    function createAuction(address auctionOwner, address usdc, address kwenta, uint256 _startingBid, uint256 _bidBuffer) public {
+        if (!auctionReady()) {
+            revert AuctionNotReady();
+        }
+        
+        lastAuctionStartTime = block.timestamp;
+
+        // auctionFactory.createAuction({
+        //     _owner: auctionOwner,
+        //     _usdc: usdc,
+        //     _kwenta: kwenta,
+        //     _startingBid: _startingBid,
+        //     _bidBuffer: _bidBuffer
+        // });
+    }
+
+    function auctionReady() public view returns (bool) {
+        if (_startOfWeek(block.timestamp) > lastAuctionStartTime) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /// @notice function for calculating the start of a week with an offset
+    function _startOfWeek(uint timestamp) internal view returns (uint) {
+        /// @dev remove offset then truncate and then put offset back because
+        /// you cannot truncate to an "offset" time - always truncates to the start
+        /// of unix time -
+        /// @dev this also prevents false truncation: without removing then adding
+        /// offset, the end of a normal week but before the end of an offset week
+        /// will get truncated to the next normal week even though the true week (offset)
+        /// has not ended yet
+        return (((timestamp - timeOffset) / 1 weeks) * 1 weeks) + timeOffset;
     }
 
     /*//////////////////////////////////////////////////////////////
