@@ -16,7 +16,7 @@ contract KSXVaultTest is Bootstrap {
 
         depositToken = new MockERC20("Deposit Token", "DT");
         stakingRewards = new MockStakingRewards(address(depositToken));
-        initializeLocal(address(depositToken),  address(stakingRewards), DECIMAL_OFFSET);
+        initializeLocal(address(depositToken),  address(stakingRewards), DECIMAL_OFFSET, 0);
 
         depositToken.mint(alice, 10 ether);
         depositToken.mint(bob, 10 ether);
@@ -98,6 +98,73 @@ contract KSXVaultTest is Bootstrap {
         // assertEq(stakingRewards.stakedBalanceOf(address(ksxVault)), 0);
         // assertEq(depositToken.balanceOf(alice), 10 ether);
         vm.stopPrank();
+    }
+
+    function test_auctionReady() public {
+        assertEq(ksxVault.auctionReady(), false);
+        assertEq(block.timestamp, 1);
+        vm.warp(block.timestamp + 1 weeks - 2);
+        assertEq(ksxVault.auctionReady(), false);
+        vm.warp(block.timestamp + 1);
+        assertEq(ksxVault.auctionReady(), true);
+    }
+
+    function test_auctionReady_next_week() public {
+        assertEq(ksxVault.auctionReady(), false);
+        assertEq(block.timestamp, 1);
+        vm.warp(block.timestamp + 1 weeks - 2);
+        assertEq(ksxVault.auctionReady(), false);
+        vm.warp(block.timestamp + 1);
+        assertEq(ksxVault.auctionReady(), true);
+
+        ksxVault.createAuction(address(this), address(0), address(0), 100, 100);
+
+        vm.warp(block.timestamp + 1 weeks - 1);
+        assertEq(ksxVault.auctionReady(), false);
+        vm.warp(block.timestamp + 1);
+        assertEq(ksxVault.auctionReady(), true);
+    }
+
+    function test_auctionReady_offset() public {
+        vm.warp(block.timestamp + 2 weeks);
+        initializeLocal(address(depositToken),  address(stakingRewards), DECIMAL_OFFSET, 1);
+        ksxVault.createAuction(address(this), address(0), address(0), 100, 100);
+        assertEq(ksxVault.auctionReady(), false);
+        assertEq(block.timestamp, 2 weeks + 1);
+        vm.warp(block.timestamp + 1 days - 2);
+        assertEq(ksxVault.auctionReady(), false);
+        vm.warp(block.timestamp + 1);
+        assertEq(ksxVault.auctionReady(), true);
+    }
+
+    function test_auctionReady_offset_next_week() public {
+        vm.warp(block.timestamp + 2 weeks);
+        initializeLocal(address(depositToken),  address(stakingRewards), DECIMAL_OFFSET, 1);
+        ksxVault.createAuction(address(this), address(0), address(0), 100, 100);
+        assertEq(ksxVault.auctionReady(), false);
+        assertEq(block.timestamp, 2 weeks + 1);
+        vm.warp(block.timestamp + 1 days - 2);
+        assertEq(ksxVault.auctionReady(), false);
+        vm.warp(block.timestamp + 1);
+        assertEq(ksxVault.auctionReady(), true);
+
+        ksxVault.createAuction(address(this), address(0), address(0), 100, 100);
+
+        vm.warp(block.timestamp + 1 weeks - 1);
+        assertEq(ksxVault.auctionReady(), false);
+        vm.warp(block.timestamp + 1);
+        assertEq(ksxVault.auctionReady(), true);
+    }
+
+    function test_createAuction() public {
+        vm.warp(block.timestamp + 1 weeks);
+        ksxVault.createAuction(address(this), address(0), address(0), 100, 100);
+        assertEq(ksxVault.lastAuctionStartTime(), block.timestamp);
+    }
+
+    function test_createAuction_AuctionNotReady() public {
+        vm.expectRevert(KSXVault.AuctionNotReady.selector);
+        ksxVault.createAuction(address(this), address(0), address(0), 100, 100);
     }
 
 }
