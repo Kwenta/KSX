@@ -123,6 +123,8 @@ contract KSXVault is ERC4626, Ownable {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Starts the auction with the USDC balance of the vault
+    /// @param _startingBid The starting bid for the auction
+    /// @param _bidBuffer The bid buffer for the auction
     function createAuction(uint256 _startingBid, uint256 _bidBuffer) public {
         if (!auctionReady()) {
             revert AuctionNotReady();
@@ -147,6 +149,8 @@ contract KSXVault is ERC4626, Ownable {
 
     }
 
+    /// @notice Sets the cooldown period for auctions
+    /// @param _auctionCooldown The new cooldown period
     function setAuctionCooldown(uint256 _auctionCooldown) public onlyOwner() {
         require(_auctionCooldown >= MIN_AUCTION_COOLDOWN && _auctionCooldown <= MAX_AUCTION_COOLDOWN, "KSXVault: Invalid cooldown");
         auctionCooldown = _auctionCooldown;
@@ -162,6 +166,8 @@ contract KSXVault is ERC4626, Ownable {
     }
 
     /// @notice function for calculating the start of a week with an offset
+    /// @param timestamp The timestamp to calculate the start of the week for
+    /// @return The start of the week as a timestamp
     function _startOfWeek(uint timestamp) internal view returns (uint) {
         /// @dev remove offset then truncate and then put offset back because
         /// you cannot truncate to an "offset" time - always truncates to the start
