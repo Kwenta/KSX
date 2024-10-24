@@ -6,17 +6,25 @@ import {Test} from "forge-std/Test.sol";
 import {Bootstrap, KSXVault} from "test/utils/Bootstrap.sol";
 import {MockERC20} from "test/mocks/MockERC20.sol";
 import {MockStakingRewards} from "test/mocks/MockStakingRewards.sol";
+import {Auction} from "src/Auction.sol";
+import {AuctionFactory} from "src/AuctionFactory.sol";
 
 contract KSXVaultTest is Bootstrap {
 
     MockERC20 depositToken;
     MockStakingRewards stakingRewards;
+    MockERC20 mockUSDC;
+    Auction auction;
+    AuctionFactory auctionFactory;
 
     function setUp() public {
 
         depositToken = new MockERC20("Deposit Token", "DT");
+        mockUSDC = new MockERC20("USDC", "USDC");
         stakingRewards = new MockStakingRewards(address(depositToken));
-        initializeLocal(address(depositToken),  address(stakingRewards), DECIMAL_OFFSET, 0);
+        auction = new Auction(address(this), address(0), address(0), 100, 100);
+        auctionFactory = new AuctionFactory(address(auction));
+        initializeLocal(address(depositToken), address(mockUSDC), address(stakingRewards), address(auctionFactory), DECIMAL_OFFSET, 0);
 
         depositToken.mint(alice, 10 ether);
         depositToken.mint(bob, 10 ether);
@@ -117,7 +125,7 @@ contract KSXVaultTest is Bootstrap {
         vm.warp(block.timestamp + 1);
         assertEq(ksxVault.auctionReady(), true);
 
-        ksxVault.createAuction(address(this), address(0), address(0), 100, 100);
+        ksxVault.createAuction(100, 100);
 
         vm.warp(block.timestamp + 1 weeks - 1);
         assertEq(ksxVault.auctionReady(), false);
@@ -127,8 +135,8 @@ contract KSXVaultTest is Bootstrap {
 
     function test_auctionReady_offset() public {
         vm.warp(block.timestamp + 2 weeks);
-        initializeLocal(address(depositToken),  address(stakingRewards), DECIMAL_OFFSET, 1);
-        ksxVault.createAuction(address(this), address(0), address(0), 100, 100);
+        initializeLocal(address(depositToken), address(mockUSDC), address(stakingRewards), address(auctionFactory), DECIMAL_OFFSET, 1);
+        ksxVault.createAuction(100, 100);
         assertEq(ksxVault.auctionReady(), false);
         assertEq(block.timestamp, 2 weeks + 1);
         vm.warp(block.timestamp + 1 days - 2);
@@ -139,8 +147,8 @@ contract KSXVaultTest is Bootstrap {
 
     function test_auctionReady_offset_next_week() public {
         vm.warp(block.timestamp + 2 weeks);
-        initializeLocal(address(depositToken),  address(stakingRewards), DECIMAL_OFFSET, 1);
-        ksxVault.createAuction(address(this), address(0), address(0), 100, 100);
+        initializeLocal(address(depositToken), address(mockUSDC), address(stakingRewards), address(auctionFactory), DECIMAL_OFFSET, 1);
+        ksxVault.createAuction(100, 100);
         assertEq(ksxVault.auctionReady(), false);
         assertEq(block.timestamp, 2 weeks + 1);
         vm.warp(block.timestamp + 1 days - 2);
@@ -148,7 +156,7 @@ contract KSXVaultTest is Bootstrap {
         vm.warp(block.timestamp + 1);
         assertEq(ksxVault.auctionReady(), true);
 
-        ksxVault.createAuction(address(this), address(0), address(0), 100, 100);
+        ksxVault.createAuction(100, 100);
 
         vm.warp(block.timestamp + 1 weeks - 1);
         assertEq(ksxVault.auctionReady(), false);
@@ -158,13 +166,13 @@ contract KSXVaultTest is Bootstrap {
 
     function test_createAuction() public {
         vm.warp(block.timestamp + 1 weeks);
-        ksxVault.createAuction(address(this), address(0), address(0), 100, 100);
+        ksxVault.createAuction(100, 100);
         assertEq(ksxVault.lastAuctionStartTime(), block.timestamp);
     }
 
     function test_createAuction_AuctionNotReady() public {
         vm.expectRevert(KSXVault.AuctionNotReady.selector);
-        ksxVault.createAuction(address(this), address(0), address(0), 100, 100);
+        ksxVault.createAuction(100, 100);
     }
 
 }

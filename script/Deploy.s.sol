@@ -23,14 +23,16 @@ contract Setup is Script {
 
     function deploySystem(
         address token,
+        address usdc,
         address stakingRewards,
+        address auctionFactory,
         uint8 decimalOffset,
         uint256 timeOffset
     )
         public
         returns (KSXVault ksxVault)
     {
-        ksxVault = new KSXVault(token, stakingRewards, decimalOffset, timeOffset);
+        ksxVault = new KSXVault(token, usdc, stakingRewards, auctionFactory, decimalOffset, timeOffset);
 
         // deploy ERC1967 proxy and set implementation to ksxVault
         Proxy proxy = new Proxy(address(ksxVault), "");

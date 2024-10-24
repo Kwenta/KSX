@@ -5,6 +5,8 @@ import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC4626} from
     "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import {IStakingRewardsV2} from "@token/interfaces/IStakingRewardsV2.sol";
+import {AuctionFactory} from "./AuctionFactory.sol";
+import {Auction} from "./Auction.sol";
 
 /// @title KSXVault Contract
 /// @notice KSX ERC4626 Vault
@@ -29,8 +31,15 @@ contract KSXVault is ERC4626 {
     IStakingRewardsV2 internal immutable STAKING_REWARDS;
 
     /// @notice KWENTA TOKEN
-     /// @dev The underlying asset of this vault
+    /// @dev The underlying asset of this vault
     ERC20 private immutable KWENTA;
+
+    /// @notice USDC TOKEN
+    /// @dev The asset used for auctions
+    IERC20 private immutable USDC;
+
+    /// @notice Auction Factory
+    AuctionFactory private immutable auctionFactory;
 
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
@@ -58,13 +67,17 @@ contract KSXVault is ERC4626 {
 
     /// @notice Constructs the KSXVault contract
     /// @param _token Kwenta token address
+    /// @param _usdc USDC token address
     /// @param _stakingRewards Kwenta v2 staking rewards contract
+    /// @param _auctionFactory the address of the auction factory
     /// @param _decimalOffset offset in the decimal representation between the
     /// underlying asset's decimals and the vault decimals
     /// @param _daysToOffsetBy the number of days to offset the week by
     constructor(
         address _token,
+        address _usdc,
         address _stakingRewards,
+        address _auctionFactory,
         uint8 _decimalOffset,
         uint256 _daysToOffsetBy
     )
@@ -74,6 +87,8 @@ contract KSXVault is ERC4626 {
         decimalOffset = _decimalOffset;
         STAKING_REWARDS = IStakingRewardsV2(_stakingRewards);
         KWENTA = ERC20(_token);
+        USDC = IERC20(_usdc);
+        auctionFactory = AuctionFactory(_auctionFactory);
 
         if (_daysToOffsetBy > MAX_OFFSET_DAYS) {
             revert OffsetTooBig();
@@ -92,21 +107,29 @@ contract KSXVault is ERC4626 {
                         START AUCTION FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Starts the weekly auction with the USDC balance of the vault
-    function createAuction(address auctionOwner, address usdc, address kwenta, uint256 _startingBid, uint256 _bidBuffer) public {
+    /// @notice Starts the auction with the USDC balance of the vault
+    function createAuction(uint256 _startingBid, uint256 _bidBuffer) public {
         if (!auctionReady()) {
             revert AuctionNotReady();
         }
         
         lastAuctionStartTime = block.timestamp;
 
-        // auctionFactory.createAuction({
-        //     _owner: auctionOwner,
-        //     _usdc: usdc,
-        //     _kwenta: kwenta,
-        //     _startingBid: _startingBid,
-        //     _bidBuffer: _bidBuffer
-        // });
+        auctionFactory.createAuction({
+            _owner: address(this),
+            _usdc: address(USDC),
+            _kwenta: address(KWENTA),
+            _startingBid: _startingBid,
+            _bidBuffer: _bidBuffer
+        });
+
+        address[] memory auctions = auctionFactory.getAllAuctions();
+        Auction auction = Auction(auctions[auctions.length - 1]);
+
+        uint256 auctionAmount = USDC.balanceOf(address(this));
+        USDC.transferFrom(address(this), address(auction), auctionAmount);
+        auction.start(auctionAmount);
+
     }
 
     /// @notice Checks if the auction is ready to start
