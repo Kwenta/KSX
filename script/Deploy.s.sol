@@ -22,14 +22,18 @@ import {Script} from "lib/forge-std/src/Script.sol";
 contract Setup is Script {
 
     function deploySystem(
+        address owner,
         address token,
+        address usdc,
         address stakingRewards,
-        uint8 decimalOffset
+        address auctionFactory,
+        uint8 decimalOffset,
+        uint256 timeOffset
     )
         public
         returns (KSXVault ksxVault)
     {
-        ksxVault = new KSXVault(token, stakingRewards, decimalOffset);
+        ksxVault = new KSXVault(owner, token, usdc, stakingRewards, auctionFactory, decimalOffset, timeOffset);
 
         // deploy ERC1967 proxy and set implementation to ksxVault
         Proxy proxy = new Proxy(address(ksxVault), "");

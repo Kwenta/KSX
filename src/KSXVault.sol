@@ -5,57 +5,178 @@ import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC4626} from
     "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import {IStakingRewardsV2} from "@token/interfaces/IStakingRewardsV2.sol";
+import {AuctionFactory} from "./AuctionFactory.sol";
+import {Auction} from "./Auction.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title KSXVault Contract
 /// @notice KSX ERC4626 Vault
 /// @author Flocqst (florian@kwenta.io)
-contract KSXVault is ERC4626 {
+contract KSXVault is ERC4626, Ownable {
 
-    /*//////////////////////////////////////////////////////////////
-                               IMMUTABLES
-    //////////////////////////////////////////////////////////////*/
+    /*///////////////////////////////////////////////////////////////
+                        CONSTANTS/IMMUTABLES
+    ///////////////////////////////////////////////////////////////*/
+
+    /// @notice max amount of days the time can be offset by
+    uint internal constant MAX_OFFSET_DAYS = 6;
+
+    /// @notice min auction cooldown
+    uint internal constant MIN_AUCTION_COOLDOWN = 1 days;
+
+    /// @notice max auction cooldown
+    uint internal constant MAX_AUCTION_COOLDOWN = 1 weeks;
 
     /// @notice Decimal offset used for calculating the conversion rate between
     /// KWENTA and KSX.
     /// @dev Set to 3 to ensure the initial fixed ratio of 1,000 KSX per KWENTA
     /// further protect against inflation attacks
     /// (https://docs.openzeppelin.com/contracts/4.x/erc4626#inflation-attack)
-    uint8 public immutable offset;
+    uint8 public immutable decimalOffset;
 
     /// @notice Kwenta's StakingRewards contract
     IStakingRewardsV2 internal immutable STAKING_REWARDS;
 
     /// @notice KWENTA TOKEN
-     /// @dev The underlying asset of this vault
+    /// @dev The underlying asset of this vault
     ERC20 private immutable KWENTA;
+
+    /// @notice USDC TOKEN
+    /// @dev The asset used for auctions
+    IERC20 private immutable USDC;
+
+    /// @notice Auction Factory
+    AuctionFactory private immutable auctionFactory;
+
+    /*//////////////////////////////////////////////////////////////
+                                ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Thrown when trying to start an auction when it is not ready
+    error AuctionNotReady();
+
+    /// @notice error when offset is 7 or more days
+    error OffsetTooBig();
+
+    /*///////////////////////////////////////////////////////////////
+                                STATE
+    ///////////////////////////////////////////////////////////////*/
+
+    /// @notice track last time the auction was started
+    uint256 public lastAuctionStartTime;
+
+    /// @notice the cooldown period for auctions
+    uint256 public auctionCooldown;
+
+    /// @notice the week offset in seconds
+    uint256 internal immutable timeOffset;
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Constructs the KSXVault contract
+    /// @param _owner The owner of the contract (access to setAuctionCooldown)
     /// @param _token Kwenta token address
+    /// @param _usdc USDC token address
     /// @param _stakingRewards Kwenta v2 staking rewards contract
-    /// @param _offset offset in the decimal representation between the
+    /// @param _auctionFactory the address of the auction factory
+    /// @param _decimalOffset offset in the decimal representation between the
     /// underlying asset's decimals and the vault decimals
+    /// @param _daysToOffsetBy the number of days to offset the week by
     constructor(
+        address _owner,
         address _token,
+        address _usdc,
         address _stakingRewards,
-        uint8 _offset
+        address _auctionFactory,
+        uint8 _decimalOffset,
+        uint256 _daysToOffsetBy
     )
         ERC4626(IERC20(_token))
         ERC20("KSX Vault", "KSX")
+        Ownable(_owner)
     {
-        offset = _offset;
+        decimalOffset = _decimalOffset;
         STAKING_REWARDS = IStakingRewardsV2(_stakingRewards);
         KWENTA = ERC20(_token);
+        USDC = IERC20(_usdc);
+        auctionFactory = AuctionFactory(_auctionFactory);
+
+        auctionCooldown = MAX_AUCTION_COOLDOWN;
+
+        if (_daysToOffsetBy > MAX_OFFSET_DAYS) {
+            revert OffsetTooBig();
+        }
+        timeOffset = _daysToOffsetBy * 1 days;
     }
 
     /// @notice Returns the decimal offset for the vault
     /// @dev This function is used internally by the ERC4626 implementation
     /// @return The decimal offset value
     function _decimalsOffset() internal view virtual override returns (uint8) {
-        return offset;
+        return decimalOffset;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            AUCTION FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Starts the auction with the USDC balance of the vault
+    /// @param _startingBid The starting bid for the auction
+    /// @param _bidBuffer The bid buffer for the auction
+    function createAuction(uint256 _startingBid, uint256 _bidBuffer) public {
+        if (!auctionReady()) {
+            revert AuctionNotReady();
+        }
+        
+        lastAuctionStartTime = block.timestamp;
+
+        auctionFactory.createAuction({
+            _owner: address(this),
+            _usdc: address(USDC),
+            _kwenta: address(KWENTA),
+            _startingBid: _startingBid,
+            _bidBuffer: _bidBuffer
+        });
+
+        address[] memory auctions = auctionFactory.getAllAuctions();
+        Auction auction = Auction(auctions[auctions.length - 1]);
+
+        uint256 auctionAmount = USDC.balanceOf(address(this));
+        USDC.transferFrom(address(this), address(auction), auctionAmount);
+        auction.start(auctionAmount);
+
+    }
+
+    /// @notice Sets the cooldown period for auctions
+    /// @param _auctionCooldown The new cooldown period
+    function setAuctionCooldown(uint256 _auctionCooldown) public onlyOwner() {
+        require(_auctionCooldown >= MIN_AUCTION_COOLDOWN && _auctionCooldown <= MAX_AUCTION_COOLDOWN, "KSXVault: Invalid cooldown");
+        auctionCooldown = _auctionCooldown;
+    }
+
+    /// @notice Checks if the auction is ready to start
+    function auctionReady() public view returns (bool) {
+        if (_startOfWeek(block.timestamp) > lastAuctionStartTime) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /// @notice function for calculating the start of a week with an offset
+    /// @param timestamp The timestamp to calculate the start of the week for
+    /// @return The start of the week as a timestamp
+    function _startOfWeek(uint timestamp) internal view returns (uint) {
+        /// @dev remove offset then truncate and then put offset back because
+        /// you cannot truncate to an "offset" time - always truncates to the start
+        /// of unix time -
+        /// @dev this also prevents false truncation: without removing then adding
+        /// offset, the end of a normal week but before the end of an offset week
+        /// will get truncated to the next normal week even though the true week (offset)
+        /// has not ended yet
+        return (((timestamp - timeOffset) / 1 weeks) * 1 weeks) + timeOffset;
     }
 
     /*//////////////////////////////////////////////////////////////
