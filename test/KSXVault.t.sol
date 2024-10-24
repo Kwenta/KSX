@@ -108,6 +108,10 @@ contract KSXVaultTest is Bootstrap {
         vm.stopPrank();
     }
 
+}
+
+contract KSXVaultAuctionTest is KSXVaultTest {
+
     function test_auctionReady() public {
         assertEq(ksxVault.auctionReady(), false);
         assertEq(block.timestamp, 1);

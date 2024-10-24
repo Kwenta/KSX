@@ -7,11 +7,12 @@ import {ERC4626} from
 import {IStakingRewardsV2} from "@token/interfaces/IStakingRewardsV2.sol";
 import {AuctionFactory} from "./AuctionFactory.sol";
 import {Auction} from "./Auction.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title KSXVault Contract
 /// @notice KSX ERC4626 Vault
 /// @author Flocqst (florian@kwenta.io)
-contract KSXVault is ERC4626 {
+contract KSXVault is ERC4626, Ownable {
 
     /*///////////////////////////////////////////////////////////////
                         CONSTANTS/IMMUTABLES
@@ -19,6 +20,12 @@ contract KSXVault is ERC4626 {
 
     /// @notice max amount of days the time can be offset by
     uint internal constant MAX_OFFSET_DAYS = 6;
+
+    /// @notice min auction cooldown
+    uint internal constant MIN_AUCTION_COOLDOWN = 1 days;
+
+    /// @notice max auction cooldown
+    uint internal constant MAX_AUCTION_COOLDOWN = 1 weeks;
 
     /// @notice Decimal offset used for calculating the conversion rate between
     /// KWENTA and KSX.
@@ -58,6 +65,9 @@ contract KSXVault is ERC4626 {
     /// @notice track last time the auction was started
     uint256 public lastAuctionStartTime;
 
+    /// @notice the cooldown period for auctions
+    uint256 public auctionCooldown;
+
     /// @notice the week offset in seconds
     uint256 internal immutable timeOffset;
 
@@ -66,6 +76,7 @@ contract KSXVault is ERC4626 {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Constructs the KSXVault contract
+    /// @param _owner The owner of the contract (access to setAuctionCooldown)
     /// @param _token Kwenta token address
     /// @param _usdc USDC token address
     /// @param _stakingRewards Kwenta v2 staking rewards contract
@@ -74,6 +85,7 @@ contract KSXVault is ERC4626 {
     /// underlying asset's decimals and the vault decimals
     /// @param _daysToOffsetBy the number of days to offset the week by
     constructor(
+        address _owner,
         address _token,
         address _usdc,
         address _stakingRewards,
@@ -83,12 +95,15 @@ contract KSXVault is ERC4626 {
     )
         ERC4626(IERC20(_token))
         ERC20("KSX Vault", "KSX")
+        Ownable(_owner)
     {
         decimalOffset = _decimalOffset;
         STAKING_REWARDS = IStakingRewardsV2(_stakingRewards);
         KWENTA = ERC20(_token);
         USDC = IERC20(_usdc);
         auctionFactory = AuctionFactory(_auctionFactory);
+
+        auctionCooldown = MAX_AUCTION_COOLDOWN;
 
         if (_daysToOffsetBy > MAX_OFFSET_DAYS) {
             revert OffsetTooBig();
@@ -104,7 +119,7 @@ contract KSXVault is ERC4626 {
     }
 
     /*//////////////////////////////////////////////////////////////
-                        START AUCTION FUNCTIONS
+                            AUCTION FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Starts the auction with the USDC balance of the vault
@@ -130,6 +145,11 @@ contract KSXVault is ERC4626 {
         USDC.transferFrom(address(this), address(auction), auctionAmount);
         auction.start(auctionAmount);
 
+    }
+
+    function setAuctionCooldown(uint256 _auctionCooldown) public onlyOwner() {
+        require(_auctionCooldown >= MIN_AUCTION_COOLDOWN && _auctionCooldown <= MAX_AUCTION_COOLDOWN, "KSXVault: Invalid cooldown");
+        auctionCooldown = _auctionCooldown;
     }
 
     /// @notice Checks if the auction is ready to start
